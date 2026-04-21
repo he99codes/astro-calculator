@@ -281,7 +281,7 @@
 
             try {
                 // Point this to your FastAPI server URL if hosted
-                const response = await fetch('http://localhost:8000/calculate', {
+                const response = await fetch('https://astro-calculator-7b3t.onrender.com', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
