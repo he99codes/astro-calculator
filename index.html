@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vedic Astro-Numerology Calculator</title>
+    <style>
+        :root {
+            --bg-color: #FFFFF0;
+            /* Ivory */
+            --primary-color: #000080;
+            /* Dark Navy */
+            --accent-color: #FF9933;
+            /* Deep Saffron */
+            --text-color: #000000;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 18px;
+            /* High legibility minimum */
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border: 3px solid var(--primary-color);
+            border-top: 10px solid var(--accent-color);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        h1,
+        h2,
+        h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 5px;
+        }
+
+        .form-step {
+            margin-bottom: 30px;
+            padding: 20px;
+            background-color: #f8f8fa;
+            border: 1px solid #ccc;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: var(--primary-color);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="date"],
+        input[type="time"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid var(--primary-color);
+            box-sizing: border-box;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 15px 30px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        button:hover {
+            background-color: var(--primary-color);
+        }
+
+        /* Report Styles */
+        #report-section {
+            display: none;
+            margin-top: 40px;
+        }
+
+        .data-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .data-box {
+            border: 2px solid var(--primary-color);
+            padding: 15px;
+            background-color: #fff;
+        }
+
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            border: 1px solid var(--primary-color);
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .sukshma-row {
+            display: none;
+            /* Hidden by default to save printable space, can be toggled */
+            background-color: #f1f1f1;
+            font-size: 16px;
+        }
+
+        .toggle-btn {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: underline;
+            padding: 0;
+            width: auto;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+
+            .container {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+
+            #input-section {
+                display: none;
+            }
+
+            .sukshma-row {
+                display: table-row !important;
+            }
+
+            .toggle-btn {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div id="input-section">
+            <h1>Generate Kundali & Numerology Report</h1>
+            <p>Please enter the birth details carefully step-by-step.</p>
+
+            <div class="form-step">
+                <h2>Step 1: Identity</h2>
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" placeholder="e.g., Ramesh Kumar">
+                </div>
+            </div>
+
+            <div class="form-step">
+                <h2>Step 2: Date & Time of Birth</h2>
+                <div class="form-group">
+                    <label for="dob">Date of Birth</label>
+                    <input type="date" id="dob">
+                </div>
+                <div class="form-group">
+                    <label for="tob">Exact Time of Birth (24-hour)</label>
+                    <input type="time" id="tob">
+                </div>
+            </div>
+
+            <div class="form-step">
+                <h2>Step 3: Location of Birth</h2>
+                <div class="form-group">
+                    <label for="lat">Latitude (Decimal Degrees, N is +, S is -)</label>
+                    <input type="number" step="0.0001" id="lat" placeholder="e.g., 28.6139">
+                </div>
+                <div class="form-group">
+                    <label for="lon">Longitude (Decimal Degrees, E is +, W is -)</label>
+                    <input type="number" step="0.0001" id="lon" placeholder="e.g., 77.2090">
+                </div>
+            </div>
+
+            <button onclick="calculateReport()">Generate Complete Report</button>
+        </div>
+
+        <div id="report-section">
+            <h1>Astrological & Numerological Report</h1>
+            <h2 id="report-name"></h2>
+
+            <h3>Vedic Numerology (Chaldean)</h3>
+            <div class="data-grid">
+                <div class="data-box">
+                    <p>Moolank (Psychic/Driver): <br><span class="highlight" id="moolank"></span></p>
+                </div>
+                <div class="data-box">
+                    <p>Bhagyank (Destiny/Conductor): <br><span class="highlight" id="bhagyank"></span></p>
+                </div>
+                <div class="data-box">
+                    <p>Name Number: <br><span class="highlight" id="nameNum"></span></p>
+                </div>
+                <div class="data-box">
+                    <p>Suitable / Friendly Numbers: <br><span class="highlight" id="friendlyNum"></span></p>
+                </div>
+            </div>
+
+            <h3>Vedic Astrology Foundations</h3>
+            <div class="data-box">
+                <p><strong>Moon Degree:</strong> <span id="moonDeg"></span>° Sidereal</p>
+                <p><strong>Birth Nakshatra Index:</strong> <span id="nakshatra"></span></p>
+                <p><strong>Balance of Dasha at Birth:</strong> <span id="balanceDasha"></span></p>
+            </div>
+
+            <h3>Vimshottari Dasha Sequence</h3>
+            <p><em>Click "Show Sub-Periods" to view Antar and Sukshma Dashas. Print page to view all expanded.</em></p>
+            <div id="dashaTableContainer"></div>
+
+            <button style="margin-top:30px;" onclick="window.print()">Print Report</button>
+        </div>
+    </div>
+
+    <script>
+        async function calculateReport() {
+            const name = document.getElementById('fullName').value;
+            const dob = document.getElementById('dob').value;
+            const tob = document.getElementById('tob').value;
+            const lat = document.getElementById('lat').value;
+            const lon = document.getElementById('lon').value;
+
+            if (!name || !dob || !tob || !lat || !lon) {
+                alert("Please fill out all fields completely.");
+                return;
+            }
+
+            const dateParts = dob.split('-');
+            const timeParts = tob.split(':');
+
+            const payload = {
+                name: name,
+                year: parseInt(dateParts[0]),
+                month: parseInt(dateParts[1]),
+                day: parseInt(dateParts[2]),
+                hour: parseInt(timeParts[0]),
+                minute: parseInt(timeParts[1]),
+                lat: parseFloat(lat),
+                lon: parseFloat(lon)
+            };
+
+            try {
+                // Point this to your FastAPI server URL if hosted
+                const response = await fetch('http://localhost:8000/calculate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json();
+
+                displayReport(name, data);
+            } catch (error) {
+                alert("Error connecting to calculation server. Ensure FastAPI backend is running.");
+                console.error(error);
+            }
+        }
+
+        function displayReport(name, data) {
+            document.getElementById('input-section').style.display = 'none';
+            document.getElementById('report-section').style.display = 'block';
+
+            document.getElementById('report-name').innerText = "Report for: " + name;
+
+            // Numerology
+            document.getElementById('moolank').innerText = data.numerology.moolank;
+            document.getElementById('bhagyank').innerText = data.numerology.bhagyank;
+            document.getElementById('nameNum').innerText = data.numerology.name_number;
+            document.getElementById('friendlyNum').innerText = data.numerology.suitable_numbers.join(", ");
+
+            // Astrology
+            document.getElementById('moonDeg').innerText = data.astrology.birth_moon_degree;
+            document.getElementById('nakshatra').innerText = data.astrology.nakshatra_number;
+            document.getElementById('balanceDasha').innerText = data.astrology.balance_of_dasha;
+
+            // Dasha Tables
+            let tableHTML = `<table>
+            <tr>
+                <th>Maha Dasha (Major)</th>
+                <th>Antar Dasha (Sub)</th>
+                <th>Dates</th>
+            </tr>`;
+
+            data.astrology.dasha_sequence.forEach((maha, mIndex) => {
+                tableHTML += `<tr style="background-color: #e6e6fa;">
+                <td colspan="2"><strong>${maha.maha_lord} Maha Dasha</strong></td>
+                <td><strong>${maha.start} to ${maha.end}</strong></td>
+            </tr>`;
+
+                maha.antar.forEach((antar, aIndex) => {
+                    const uniqueId = `sukshma-${mIndex}-${aIndex}`;
+                    tableHTML += `<tr>
+                    <td></td>
+                    <td>${antar.lord} Antar Dasha <br><button class="toggle-btn" onclick="toggleSukshma('${uniqueId}')">Toggle Sub-Sub Periods</button></td>
+                    <td>${antar.start} to ${antar.end}</td>
+                </tr>`;
+
+                    // Sukshma loop
+                    let sukshmaList = antar.sukshma.map(s => `${s.lord}: ${s.start} - ${s.end}`).join('<br>');
+                    tableHTML += `<tr class="sukshma-row" id="${uniqueId}">
+                    <td></td>
+                    <td colspan="2"><strong>Sukshma (Pratyantar) Periods:</strong><br>${sukshmaList}</td>
+                </tr>`;
+                });
+            });
+
+            tableHTML += `</table>`;
+            document.getElementById('dashaTableContainer').innerHTML = tableHTML;
+        }
+
+        function toggleSukshma(id) {
+            const row = document.getElementById(id);
+            if (row.style.display === 'table-row') {
+                row.style.display = 'none';
+            } else {
+                row.style.display = 'table-row';
+            }
+        }
+    </script>
+</body>
+
+</html>i
