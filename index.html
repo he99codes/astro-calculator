@@ -4,15 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vedic Astro-Numerology Calculator</title>
+    <title>Vedic Astro-Numerology Calculator v2.0</title>
     <style>
         :root {
-            --bg-color: #FFFFF0;
-            /* Ivory */
-            --primary-color: #000080;
-            /* Dark Navy */
-            --accent-color: #FF9933;
-            /* Deep Saffron */
+            --bg-color: #FFFFF0; /* Ivory */
+            --primary-color: #000080; /* Dark Navy */
+            --astro-accent: #FF9933; /* Deep Saffron */
+            --pink-accent: #DB7093; /* Pale Violet Red / Plum / Rose */
             --text-color: #000000;
         }
 
@@ -20,8 +18,7 @@
             font-family: 'Georgia', serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            font-size: 18px;
-            /* High legibility minimum */
+            font-size: 18px; /* High legibility minimum */
             line-height: 1.6;
             margin: 0;
             padding: 20px;
@@ -33,23 +30,34 @@
             background: white;
             padding: 40px;
             border: 3px solid var(--primary-color);
-            border-top: 10px solid var(--accent-color);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-top: 10px solid var(--astro-accent);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
 
-        h1,
-        h2,
-        h3 {
+        h1 {
             color: var(--primary-color);
-            border-bottom: 2px solid var(--accent-color);
+            border-bottom: 3px solid var(--astro-accent);
+            padding-bottom: 10px;
+            text-align: center;
+        }
+
+        h2, h3 {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--pink-accent);
             padding-bottom: 5px;
+            margin-top: 30px;
+        }
+
+        /* Astrology section headers use Saffron */
+        #astrology-foundations h3, #astro-dashas h3 {
+            border-bottom-color: var(--astro-accent);
         }
 
         .form-step {
             margin-bottom: 30px;
             padding: 20px;
-            background-color: #f8f8fa;
-            border: 1px solid #ccc;
+            background-color: #fcf4f4; /* Light Rose hint */
+            border: 1px solid #e0baba;
         }
 
         .form-group {
@@ -63,19 +71,23 @@
             color: var(--primary-color);
         }
 
-        input[type="text"],
-        input[type="number"],
-        input[type="date"],
-        input[type="time"] {
+        input[type="text"], input[type="number"], input[type="date"], input[type="time"] {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             font-size: 18px;
             border: 1px solid var(--primary-color);
             box-sizing: border-box;
+            background: white;
+        }
+
+        input[type="time"]:disabled {
+            background-color: #e9e9e9;
+            color: #555;
+            border-color: #aaa;
         }
 
         button {
-            background-color: var(--accent-color);
+            background-color: var(--pink-accent);
             color: white;
             font-size: 20px;
             font-weight: bold;
@@ -83,9 +95,18 @@
             border: none;
             cursor: pointer;
             width: 100%;
+            transition: background-color 0.3s;
         }
 
         button:hover {
+            background-color: var(--primary-color);
+        }
+
+        /* Astrology button uses Saffron */
+        #astro-calc-btn {
+            background-color: var(--astro-accent);
+        }
+        #astro-calc-btn:hover {
             background-color: var(--primary-color);
         }
 
@@ -103,14 +124,66 @@
 
         .data-box {
             border: 2px solid var(--primary-color);
-            padding: 15px;
+            padding: 20px;
             background-color: #fff;
+            transition: box-shadow 0.3s;
+        }
+        .data-box:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .highlight {
-            color: var(--accent-color);
+            color: var(--pink-accent);
             font-weight: bold;
-            font-size: 24px;
+            font-size: 26px;
+        }
+
+        /* 3x3 Numerical Grid (as shown in image_4.png) */
+        .numero-matrix {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+            width: 100%;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .matrix-cell {
+            aspect-ratio: 1; /* Keep cells square */
+            background-color: #fff;
+            border: 2px solid var(--primary-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+        }
+
+        .cell-main-num {
+            font-size: 32px;
+            line-height: 1;
+        }
+
+        .cell-label {
+            font-size: 14px;
+            font-weight: normal;
+            color: #555;
+            text-align: center;
+        }
+
+        /* Highlighting as shown in the user's reference image */
+        .period-lord { /* Red number in image */
+            color: red;
+            background-color: #fff8f8;
+        }
+
+        .period-sublord { /* Blue number in image */
+            color: blue;
+            background-color: #f8faff;
         }
 
         table {
@@ -119,10 +192,9 @@
             margin-top: 20px;
         }
 
-        th,
-        td {
+        th, td {
             border: 1px solid var(--primary-color);
-            padding: 10px;
+            padding: 12px;
             text-align: left;
         }
 
@@ -132,16 +204,15 @@
         }
 
         .sukshma-row {
-            display: none;
-            /* Hidden by default to save printable space, can be toggled */
-            background-color: #f1f1f1;
+            display: none; /* Hidden by default to save printable space, can be toggled */
+            background-color: #fcfafa;
             font-size: 16px;
         }
 
         .toggle-btn {
             background: none;
             border: none;
-            color: var(--accent-color);
+            color: var(--pink-accent);
             font-size: 16px;
             cursor: pointer;
             text-decoration: underline;
@@ -150,212 +221,417 @@
         }
 
         @media print {
-            body {
-                background: white;
-            }
-
-            .container {
-                box-shadow: none;
-                border: none;
-                padding: 0;
-            }
-
-            #input-section {
-                display: none;
-            }
-
-            .sukshma-row {
-                display: table-row !important;
-            }
-
-            .toggle-btn {
-                display: none;
-            }
+            body { background: white; }
+            .container { box-shadow: none; border: none; padding: 0; }
+            #input-section { display: none; }
+            #print-report-btn, .cycle-calc-btn, .toggle-btn { display: none !important; }
+            .sukshma-row { display: table-row !important; }
+            h1, h2, h3 { border-bottom-color: black; color: black; }
+            table, th, td, .data-box, .matrix-cell { border-color: black; color: black; }
+            .highlight, .period-lord, .period-sublord { color: black !important; background: none !important; }
         }
     </style>
 </head>
 
 <body>
 
-    <div class="container">
-        <div id="input-section">
-            <h1>Generate Kundali & Numerology Report</h1>
-            <p>Please enter the birth details carefully step-by-step.</p>
+<div class="container">
+    <div id="input-section">
+        <h1>Professional Kundali & Numerology Portal v2.0</h1>
+        <p>Please enter the birth details carefully step-by-step for absolute precision.</p>
 
-            <div class="form-step">
-                <h2>Step 1: Identity</h2>
-                <div class="form-group">
-                    <label for="fullName">Full Name</label>
-                    <input type="text" id="fullName" placeholder="e.g., Ramesh Kumar">
-                </div>
+        <div class="form-step">
+            <h2>Step 1: Identity</h2>
+            <div class="form-group">
+                <label for="fullName">Full Name</label>
+                <input type="text" id="fullName" placeholder="e.g., Ramesh Kumar">
             </div>
-
-            <div class="form-step">
-                <h2>Step 2: Date & Time of Birth</h2>
-                <div class="form-group">
-                    <label for="dob">Date of Birth</label>
-                    <input type="date" id="dob">
-                </div>
-                <div class="form-group">
-                    <label for="tob">Exact Time of Birth (24-hour)</label>
-                    <input type="time" id="tob">
-                </div>
-            </div>
-
-            <div class="form-step">
-                <h2>Step 3: Location of Birth</h2>
-                <div class="form-group">
-                    <label for="lat">Latitude (Decimal Degrees, N is +, S is -)</label>
-                    <input type="number" step="0.0001" id="lat" placeholder="e.g., 28.6139">
-                </div>
-                <div class="form-group">
-                    <label for="lon">Longitude (Decimal Degrees, E is +, W is -)</label>
-                    <input type="number" step="0.0001" id="lon" placeholder="e.g., 77.2090">
-                </div>
-            </div>
-
-            <button onclick="calculateReport()">Generate Complete Report</button>
         </div>
 
-        <div id="report-section">
-            <h1>Astrological & Numerological Report</h1>
-            <h2 id="report-name"></h2>
+        <div class="form-step">
+            <h2>Step 2: Date & Time of Birth</h2>
+            <div class="form-group">
+                <label for="dob">Date of Birth</label>
+                <input type="date" id="dob">
+            </div>
+            <div class="form-group">
+                <label for="tob">Exact Time of Birth (24-hour)</label>
+                <input type="time" id="tob">
+                <label style="font-weight: normal; font-size: 16px; margin-top: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" id="unknownTime" onchange="toggleTime()" style="width: auto; margin: 0;"> Time unknown (Complementary standard: 12:00 PM Noon)
+                </label>
+            </div>
+        </div>
 
-            <h3>Vedic Numerology (Chaldean)</h3>
-            <div class="data-grid">
-                <div class="data-box">
-                    <p>Moolank (Psychic/Driver): <br><span class="highlight" id="moolank"></span></p>
+        <div class="form-step">
+            <h2>Step 3: Location of Birth</h2>
+            <div class="form-group">
+                <label for="citySearch">Search Birth City</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="citySearch" placeholder="e.g., Pune, India" onkeydown="if(event.key === 'Enter') searchCity()">
+                    <button type="button" onclick="searchCity()" style="width: auto; padding: 10px 20px;">Search City</button>
                 </div>
-                <div class="data-box">
-                    <p>Bhagyank (Destiny/Conductor): <br><span class="highlight" id="bhagyank"></span></p>
-                </div>
-                <div class="data-box">
-                    <p>Name Number: <br><span class="highlight" id="nameNum"></span></p>
-                </div>
-                <div class="data-box">
-                    <p>Suitable / Friendly Numbers: <br><span class="highlight" id="friendlyNum"></span></p>
-                </div>
+                <div id="cityResults" style="margin-top: 10px; background: #fff; border: 1px solid var(--primary-color); display: none; max-height: 200px; overflow-y: auto;"></div>
+                <p id="selectedCoordinates" style="font-size: 16px; color: green; font-weight: bold; display: none; margin-top: 10px;"></p>
+                
+                <input type="hidden" id="lat">
+                <input type="hidden" id="lon">
+            </div>
+        </div>
+
+        <button id="astro-calc-btn" onclick="calculateReport()">Generate Complete Professional Report</button>
+    </div>
+
+    <div id="report-section">
+        <h1 id="report-title-v2"></h1>
+        
+        <h2>Base Numerology Dashboard (Chaldean)</h2>
+        <p><em>Thinking like a numerologist, here is your core numerical signature:</em></p>
+        
+        <div class="numero-matrix" id="key-numbers-grid">
             </div>
 
-            <h3>Vedic Astrology Foundations</h3>
+        <div class="data-box" style="margin-top: 20px;">
+            <p>Suitable / Friendly Numbers: <br><span class="highlight" id="friendlyNum" style="font-size: 20px;"></span></p>
+        </div>
+
+        <h2>Dynamic Cyclical Numerology Calculator</h2>
+        <p><em>Enter a specific year (past or future) to calculate cyclical periods and sub-periods. Vedic logic: Year is top-level cycle, Month is sub-level.</em></p>
+        <div class="form-step" style="background: #fff; border-color: var(--pink-accent);">
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <input type="number" id="predictYear" placeholder="Enter Year, e.g., 2026" min="1900" max="2100">
+                <button type="button" class="cycle-calc-btn" onclick="calculateYearlyCycles()" style="width: auto; padding: 10px 20px; background-color: var(--primary-color);">Calculate Yearly Cycles</button>
+            </div>
+            <div id="cycle-results-area" style="display: none; margin-top: 20px;">
+                </div>
+        </div>
+
+        <div id="astrology-foundations">
+            <h2>Vedic Astrology Foundations</h2>
             <div class="data-box">
                 <p><strong>Moon Degree:</strong> <span id="moonDeg"></span>° Sidereal</p>
                 <p><strong>Birth Nakshatra Index:</strong> <span id="nakshatra"></span></p>
                 <p><strong>Balance of Dasha at Birth:</strong> <span id="balanceDasha"></span></p>
             </div>
-
-            <h3>Vimshottari Dasha Sequence</h3>
-            <p><em>Click "Show Sub-Periods" to view Antar and Sukshma Dashas. Print page to view all expanded.</em></p>
-            <div id="dashaTableContainer"></div>
-
-            <button style="margin-top:30px;" onclick="window.print()">Print Report</button>
         </div>
+
+        <div id="astro-dashas">
+            <h2>Vimshottari Dasha Sequence</h2>
+            <p><em>Click "Toggle Sub-Sub Periods" to view Antar and Sukshma Dashas. Print page to view all expanded.</em></p>
+            <div id="dashaTableContainer"></div>
+        </div>
+
+        <button id="print-report-btn" style="margin-top:30px; background-color: var(--primary-color);" onclick="window.print()">Print Complete Professional Kundali</button>
     </div>
+</div>
 
-    <script>
-        async function calculateReport() {
-            const name = document.getElementById('fullName').value;
-            const dob = document.getElementById('dob').value;
-            const tob = document.getElementById('tob').value;
-            const lat = document.getElementById('lat').value;
-            const lon = document.getElementById('lon').value;
+<script>
+    // 1. Logic for "Time Unknown" Checkbox
+    function toggleTime() {
+        const tobInput = document.getElementById('tob');
+        const isUnknown = document.getElementById('unknownTime').checked;
+        if (isUnknown) {
+            tobInput.value = '12:00';
+            tobInput.disabled = true;
+        } else {
+            tobInput.disabled = false;
+        }
+    }
 
-            if (!name || !dob || !tob || !lat || !lon) {
-                alert("Please fill out all fields completely.");
+    // 2. Logic for City Search Autocomplete (using free OpenStreetMap API)
+    async function searchCity() {
+        const query = document.getElementById('citySearch').value;
+        if (!query) return;
+        
+        const resultsDiv = document.getElementById('cityResults');
+        resultsDiv.innerHTML = '<div style="padding: 10px;">Searching database...</div>';
+        resultsDiv.style.display = 'block';
+
+        try {
+            
+            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+            
+            if (data.length === 0) {
+                resultsDiv.innerHTML = '<div style="padding: 10px; color: red;">No cities found. Try adding the country name (e.g., "Pune, India").</div>';
                 return;
             }
 
-            const dateParts = dob.split('-');
-            const timeParts = tob.split(':');
+            resultsDiv.innerHTML = '';
+            data.forEach(place => {
+                const div = document.createElement('div');
+                div.style.padding = '10px';
+                div.style.cursor = 'pointer';
+                div.style.borderBottom = '1px solid #eee';
+                div.innerText = place.display_name;
+                
+                // Hover effect
+                div.onmouseover = () => div.style.backgroundColor = '#fcedf1'; /* Hint of rose */
+                div.onmouseout = () => div.style.backgroundColor = 'white';
+                
+                // When a city is clicked, select it
+                div.onclick = () => selectCity(place.display_name, place.lat, place.lon);
+                resultsDiv.appendChild(div);
+            });
+        } catch (error) {
+            resultsDiv.innerHTML = '<div style="padding: 10px; color: red;">Error searching. Check internet connection.</div>';
+        }
+    }
 
-            const payload = {
-                name: name,
-                year: parseInt(dateParts[0]),
-                month: parseInt(dateParts[1]),
-                day: parseInt(dateParts[2]),
-                hour: parseInt(timeParts[0]),
-                minute: parseInt(timeParts[1]),
-                lat: parseFloat(lat),
-                lon: parseFloat(lon)
-            };
+    // Locks in the latitude and longitude hidden values
+    function selectCity(name, lat, lon) {
+        document.getElementById('citySearch').value = name;
+        document.getElementById('lat').value = lat;
+        document.getElementById('lon').value = lon;
+        
+        const coordDisplay = document.getElementById('selectedCoordinates');
+        coordDisplay.innerText = `Location Locked: Lat ${parseFloat(lat).toFixed(2)}, Lon ${parseFloat(lon).toFixed(2)}`;
+        coordDisplay.style.display = 'block';
+        
+        document.getElementById('cityResults').style.display = 'none';
+    }
 
-            try {
-                // Point this to your FastAPI server URL if hosted  https://astro-calculator-7b3t.onrender.com
-                const response = await fetch('https://astro-calculator-7b3t.onrender.com/calculate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-                const data = await response.json();
+    // Base calculation
+    async function calculateReport() {
+        const name = document.getElementById('fullName').value;
+        const dob = document.getElementById('dob').value;
+        const tob = document.getElementById('tob').value;
+        const lat = document.getElementById('lat').value;
+        const lon = document.getElementById('lon').value;
 
-                displayReport(name, data);
-            } catch (error) {
-                alert("Error connecting to calculation server. Ensure FastAPI backend is running.");
-                console.error(error);
-            }
+        // Validation with specific guidance
+        if (!name || !dob || !tob) {
+            alert("Please complete the Identity (Step 1) and Date/Time (Step 2).");
+            return;
+        }
+        if (!lat || !lon) {
+            alert("Please search for your Birth City (Step 3) and select it from the list to lock coordinates.");
+            return;
         }
 
-        function displayReport(name, data) {
-            document.getElementById('input-section').style.display = 'none';
-            document.getElementById('report-section').style.display = 'block';
+        const dateParts = dob.split('-');
+        const timeParts = tob.split(':');
 
-            document.getElementById('report-name').innerText = "Report for: " + name;
+        const payload = {
+            name: name,
+            year: parseInt(dateParts[0]),
+            month: parseInt(dateParts[1]),
+            day: parseInt(dateParts[2]),
+            hour: parseInt(timeParts[0]),
+            minute: parseInt(timeParts[1]),
+            lat: parseFloat(lat),
+            lon: parseFloat(lon)
+        };
 
-            // Numerology
-            document.getElementById('moolank').innerText = data.numerology.moolank;
-            document.getElementById('bhagyank').innerText = data.numerology.bhagyank;
-            document.getElementById('nameNum').innerText = data.numerology.name_number;
-            document.getElementById('friendlyNum').innerText = data.numerology.suitable_numbers.join(", ");
+        // Pre-save birth data globally for the yearly calculator to use
+        window.currentBirthData = payload;
 
-            // Astrology
-            document.getElementById('moonDeg').innerText = data.astrology.birth_moon_degree;
-            document.getElementById('nakshatra').innerText = data.astrology.nakshatra_number;
-            document.getElementById('balanceDasha').innerText = data.astrology.balance_of_dasha;
+        try {
+            const response = await fetch('https://astro-calculator-7b3t.onrender.com/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            
+            displayReport(name, data);
+        } catch (error) {
+            alert("Error connecting to calculation server. Ensure FastAPI backend is running with dependencies.");
+            console.error(error);
+        }
+    }
 
-            // Dasha Tables
-            let tableHTML = `<table>
+    // Helper to format Master numbers as e.g., "4 (22)"
+    function formatMaster(numeroInfo) {
+        if (numeroInfo.master) {
+            return `${numeroInfo.single} (${numeroInfo.master})`;
+        }
+        return numeroInfo.single;
+    }
+
+    function displayReport(name, data) {
+        document.getElementById('input-section').style.display = 'none';
+        document.getElementById('report-section').style.display = 'block';
+        
+        document.getElementById('report-title-v2').innerText = "Professional Astro-Numerology Kundali for: " + name;
+
+        // --- NEW v2.0 FEATURE: Strategic 3x3 Numerology Key Matrix ---
+        const matrixDiv = document.getElementById('key-numbers-grid');
+        matrixDiv.innerHTML = '';
+        const num = data.numerology;
+
+        const keyCells = [
+            { label: `Name Compound: ${num.name_number.compound}`, num: '' },
+            { label: `Bhagyank Compound: ${num.bhagyank.compound}`, num: '' },
+            { label: `Moolank Compound: ${num.moolank.compound}`, num: '' },
+            { label: '', num: '' },
+            { label: 'Name Number', num: formatMaster(num.name_number) },
+            { label: '', num: '' },
+            { label: 'Bhagyank Compound', num: '' },
+            { label: '', num: '' },
+            { label: '', num: '' },
+        ];
+
+        // Let's place Moolank (Red Lord) and Bhagyank (Blue Sublord) in specific corner cells for strategic look
+        // Top-Right Corner (Cell 3)
+        keyCells[2].num = formatMaster(num.moolank);
+        keyCells[2].label = 'Moolank<br>(Driver/Lord)';
+        keyCells[2].type = 'lord';
+
+        // Bottom-Right Corner (Cell 9)
+        keyCells[8].num = formatMaster(num.bhagyank);
+        keyCells[8].label = 'Bhagyank<br>(Conductor/Sub-Lord)';
+        keyCells[8].type = 'sublord';
+
+        keyCells.forEach(cell => {
+            const div = document.createElement('div');
+            div.className = 'matrix-cell';
+            if(cell.type === 'lord') div.classList.add('period-lord');
+            if(cell.type === 'sublord') div.classList.add('period-sublord');
+            
+            div.innerHTML = `<span class="cell-main-num">${cell.num}</span><span class="cell-label">${cell.label}</span>`;
+            matrixDiv.appendChild(div);
+        });
+
+        // Other Numerology
+        document.getElementById('friendlyNum').innerText = num.suitable_numbers.join(", ");
+
+        // Astrology
+        document.getElementById('moonDeg').innerText = data.astrology.birth_moon_degree;
+        document.getElementById('nakshatra').innerText = data.astrology.nakshatra_number;
+        document.getElementById('balanceDasha').innerText = data.astrology.balance_of_dasha;
+
+        // Dasha Tables
+        let dashaTableContainer = document.getElementById('dashaTableContainer');
+        dashaTableContainer.innerHTML = ''; // Clear previous
+
+        let tableHTML = `<table>
             <tr>
                 <th>Maha Dasha (Major)</th>
                 <th>Antar Dasha (Sub)</th>
                 <th>Dates</th>
             </tr>`;
 
-            data.astrology.dasha_sequence.forEach((maha, mIndex) => {
-                tableHTML += `<tr style="background-color: #e6e6fa;">
+        data.astrology.dasha_sequence.forEach((maha, mIndex) => {
+            tableHTML += `<tr style="background-color: #f1f0ff;"> /* Hint of navy/lavender */
                 <td colspan="2"><strong>${maha.maha_lord} Maha Dasha</strong></td>
                 <td><strong>${maha.start} to ${maha.end}</strong></td>
             </tr>`;
 
-                maha.antar.forEach((antar, aIndex) => {
-                    const uniqueId = `sukshma-${mIndex}-${aIndex}`;
-                    tableHTML += `<tr>
+            maha.antar.forEach((antar, aIndex) => {
+                const uniqueId = `sukshma-${mIndex}-${aIndex}`;
+                tableHTML += `<tr>
                     <td></td>
                     <td>${antar.lord} Antar Dasha <br><button class="toggle-btn" onclick="toggleSukshma('${uniqueId}')">Toggle Sub-Sub Periods</button></td>
                     <td>${antar.start} to ${antar.end}</td>
                 </tr>`;
 
-                    // Sukshma loop
-                    let sukshmaList = antar.sukshma.map(s => `${s.lord}: ${s.start} - ${s.end}`).join('<br>');
-                    tableHTML += `<tr class="sukshma-row" id="${uniqueId}">
+                // Sukshma loop
+                let sukshmaList = antar.sukshma.map(s => `${s.lord}: ${s.start} - ${s.end}`).join('<br>');
+                tableHTML += `<tr class="sukshma-row" id="${uniqueId}">
                     <td></td>
                     <td colspan="2"><strong>Sukshma (Pratyantar) Periods:</strong><br>${sukshmaList}</td>
                 </tr>`;
-                });
             });
+        });
 
-            tableHTML += `</table>`;
-            document.getElementById('dashaTableContainer').innerHTML = tableHTML;
+        tableHTML += `</table>`;
+        dashaTableContainer.innerHTML = tableHTML;
+    }
+
+    // --- NEW v2.0 FEATURE: Yearly Cycle Prediction Calculator ---
+    async function calculateYearlyCycles() {
+        const predictYear = document.getElementById('predictYear').value;
+        const birthData = window.currentBirthData;
+        const resultsArea = document.getElementById('cycle-results-area');
+
+        if (!birthData) {
+            alert("Please calculate the full Astro report first to set birth data.");
+            return;
+        }
+        if (!predictYear || predictYear < 1900 || predictYear > 2100) {
+            alert("Please enter a valid year between 1900 and 2100.");
+            return;
         }
 
-        function toggleSukshma(id) {
-            const row = document.getElementById(id);
-            if (row.style.display === 'table-row') {
-                row.style.display = 'none';
-            } else {
-                row.style.display = 'table-row';
-            }
+        const payload = {
+            dob_day: birthData.day,
+            dob_month: birthData.month,
+            predict_year: parseInt(predictYear)
+        };
+
+        try {
+            const response = await fetch('https://astro-calculator-7b3t.onrender.com/predict-periods', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            
+            displayCycleResults(data);
+        } catch (error) {
+            alert("Error connecting to prediction server. Ensure FastAPI backend is running with Dependencies.");
+            console.error(error);
         }
-    </script>
+    }
+
+    function displayCycleResults(data) {
+        const resultsArea = document.getElementById('cycle-results-area');
+        resultsArea.innerHTML = ''; // Clear previous results
+        resultsArea.style.display = 'block';
+
+        // Helper for period formatting as in image: e.g., "9, 4"
+        const yearCycle = formatMaster(data.personal_year);
+        const monthCycle = data.personal_month.single;
+        
+        resultsArea.innerHTML = `<p style="color: var(--primary-color); font-weight: bold; text-align: center;">Year: ${data.prediction_year}<br>Mahadasha: <span style="color:red;">${yearCycle}</span>, Antradasha: <span style="color:blue;">${monthCycle}</span></p>`;
+
+        // Create the small 3x3 Yearly matrix like in image_4.png
+        const cycleMatrixDiv = document.createElement('div');
+        cycleMatrixDiv.className = 'numero-matrix';
+        cycleMatrixDiv.style.maxWidth = '300px'; // Make this one smaller
+
+        // Replicating the strategic corner highlight style for the dynamic cycle
+        const cycleCells = [
+            { label: 'Day Moolank', num: window.numerologyData?.moolank?.single || '' },
+            { label: 'Bhagyank', num: window.numerologyData?.bhagyank?.single || '' },
+            { label: '', num: formatMaster(data.personal_year), type: 'lord' },
+            { label: 'Birth Day Compound', num: window.numerologyData?.moolank?.compound || '' },
+            { label: 'Personal Month', num: data.personal_month.single },
+            { label: 'Prediction Day', num: data.prediction_day },
+            { label: 'Current Month Total', num: data.prediction_month_name },
+            { label: '', num: data.personal_day.single },
+            { label: '', num: data.personal_month.single, type: 'sublord' },
+        ];
+        
+        // Let's refine the placement to look logical. Personal Year is the primary cycle lord.
+        cycleCells[2].label = 'Mahadasha<br>(Personal Year Lord)';
+        // Personal Month is the primary antradasha sublord.
+        cycleCells[8].label = 'Antradasha<br>(Personal Month Sub-Lord)';
+
+        cycleCells.forEach(cell => {
+            const div = document.createElement('div');
+            div.className = 'matrix-cell';
+            div.style.aspectRatio = '1.2'; // Keep cells rectangular but distinct
+            if(cell.type === 'lord') div.classList.add('period-lord');
+            if(cell.type === 'sublord') div.classList.add('period-sublord');
+            
+            div.innerHTML = `<span class="cell-main-num" style="font-size: 28px;">${cell.num}</span><span class="cell-label" style="font-size: 13px;">${cell.label}</span>`;
+            cycleMatrixDiv.appendChild(div);
+        });
+
+        resultsArea.appendChild(cycleMatrixDiv);
+        resultsArea.scrollIntoView({ behavior: "smooth" });
+    }
+
+    function toggleSukshma(id) {
+        const row = document.getElementById(id);
+        if (row.style.display === 'table-row') {
+            row.style.display = 'none';
+        } else {
+            row.style.display = 'table-row';
+        }
+    }
+</script>
 </body>
-
-</html>i
+</html>

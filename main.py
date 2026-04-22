@@ -3,8 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime, timedelta
 import swisseph as swe
+import pytz
+from timezonefinder import TimezoneFinder
+from typing import Optional
 
-app = FastAPI(title="Vedic Astro-Numerology API")
+app = FastAPI(title="Vedic Astro-Numerology API v2.0")
+
+tf = TimezoneFinder()
 
 # Allow frontend to communicate with backend
 app.add_middleware(
@@ -15,7 +20,7 @@ app.add_middleware(
 )
 
 # ==========================================
-# 1. NUMEROLOGY ENGINE (Chaldean System)
+# 1. NUMEROLOGY ENGINE (Chaldean & Cycles)
 # ==========================================
 
 CHALDEAN_MAP = {
@@ -46,10 +51,31 @@ def reduce_to_single_digit(num: int) -> int:
     if num == 0: return 0
     return (num - 1) % 9 + 1
 
-def calculate_name_number(name: str) -> int:
+def check_master_number(compound: int) -> Optional[int]:
+    if compound in [11, 22, 33, 44]:
+        return compound
+    return None
+
+def calculate_moolank(day: int):
+    # For day only, 11 and 22 are master numbers.
+    if day in [11, 22]:
+        return {"single": reduce_to_single_digit(day), "compound": day, "master": day}
+    return {"single": reduce_to_single_digit(day), "compound": day, "master": None}
+
+def calculate_name_number(name: str):
     name = name.upper()
     total = sum(CHALDEAN_MAP.get(char, 0) for char in name)
-    return reduce_to_single_digit(total)
+    return {"single": reduce_to_single_digit(total), "compound": total, "master": check_master_number(total)}
+
+def calculate_bhagyank(day: int, month: int, year: int):
+    # For full date total, 11, 22, 33 are master numbers.
+    total = day + month + sum(int(digit) for digit in str(year))
+    return {"single": reduce_to_single_digit(total), "compound": total, "master": check_master_number(total)}
+
+def calculate_yearly_period(day: int, month: int, predict_year: int):
+    # Personal Year = Day + Month + Predict Year
+    total = day + month + sum(int(digit) for digit in str(predict_year))
+    return {"single": reduce_to_single_digit(total), "compound": total, "master": check_master_number(total)}
 
 # ==========================================
 # 2. ASTROLOGY ENGINE (Vimshottari Dasha)
@@ -62,30 +88,35 @@ NAKSHATRA_SPAN = 360 / 27 # 13 degrees 20 minutes
 
 # Required to point to ephemeris files if installed locally, otherwise uses built-in Moshier
 # swe.set_ephe_path('/path/to/ephe') 
-import pytz
-from datetime import datetime
 
 def calculate_moon_longitude(year, month, day, hour, minute, lat, lon):
-    # 1. Define the local timezone (e.g., IST for Indian births)
-    # In a full app, you might accept the timezone as a user input
-    local_tz = pytz.timezone('Asia/Kolkata')
+    # 1. Automatically find the timezone string (e.g., 'Asia/Kolkata') from coordinates
+    tz_str = tf.timezone_at(lng=lon, lat=lat)
+    if tz_str is None:
+        tz_str = 'UTC' # Fallback if in the middle of the ocean
+        
+    local_tz = pytz.timezone(tz_str)
     
-    # 2. Localize the birth time
+    # 2. Localize the birth time based on the exact city
     local_dt = local_tz.localize(datetime(year, month, day, hour, minute))
     
-    # 3. Convert strictly to UTC
+    # 3. Convert safely to UTC for the Swiss Ephemeris
     utc_dt = local_dt.astimezone(pytz.utc)
     utc_decimal_hour = utc_dt.hour + (utc_dt.minute / 60.0) + (utc_dt.second / 3600.0)
     
     # 4. Use the UTC date and time for the Julian Day calculation
     jd = swe.julday(utc_dt.year, utc_dt.month, utc_dt.day, utc_decimal_hour)
     
+    # Set Sidereal mode to Lahiri Ayanamsa (Vedic standard)
     swe.set_sid_mode(swe.SIDM_LAHIRI)
+    
+    # Get Moon position (Planet 1) in Sidereal zodiac
+    # swe.FLG_SWIEPH (ephemeris), swe.FLG_SIDEREAL (vedic)
     flags = swe.FLG_SWIEPH | swe.FLG_SIDEREAL
     res, flag_ret = swe.calc_ut(jd, swe.MOON, flags)
     
-    return res[0]
-# def calculate_moon_long
+    moon_long = res[0]
+    return moon_long
 
 def calculate_dasha(moon_long, birth_date: datetime):
     # Calculate Nakshatra (0 to 26)
@@ -133,8 +164,6 @@ def calculate_dasha(moon_long, birth_date: datetime):
             ad_years = DASHA_YEARS[ad_idx]
             
             # AD Span = (Maha Dasha Years * Antar Dasha Years) / 120
-            # If it's the first Maha Dasha, we must calculate proportionally from the balance
-            # For simplicity in this implementation, we map standard AD chunks.
             ad_span_years = (years * ad_years) / TOTAL_DASHA_YEARS
             ad_span_days = ad_span_years * 365.25
             
@@ -196,30 +225,76 @@ class BirthData(BaseModel):
     lat: float
     lon: float
 
+class PeriodPredictionData(BaseModel):
+    dob_day: int
+    dob_month: int
+    predict_year: int
+    predict_month: int = datetime.now().month
+    predict_day: int = datetime.now().day
+
 @app.post("/calculate")
 def calculate_all(data: BirthData):
-    # Numerology
-    moolank = reduce_to_single_digit(data.day)
-    full_date_sum = data.day + data.month + sum(int(digit) for digit in str(data.year))
-    bhagyank = reduce_to_single_digit(full_date_sum)
-    name_num = calculate_name_number(data.name)
+    # Numerology (with new v2.0 compound/master logic)
+    moolank_info = calculate_moolank(data.day)
+    bhagyank_info = calculate_bhagyank(data.day, data.month, data.year)
+    name_info = calculate_name_number(data.name)
     
-    friendly_moolank = NUMERO_FRIENDS.get(moolank, [])
-    friendly_bhagyank = NUMERO_FRIENDS.get(bhagyank, [])
+    # Calculate Personal Year for the *current* year automatically
+    current_year = datetime.now().year
+    personal_year_info = calculate_yearly_period(data.day, data.month, current_year)
     
-    # Astrology
+    friendly_moolank = NUMERO_FRIENDS.get(moolank_info["single"], [])
+    friendly_bhagyank = NUMERO_FRIENDS.get(bhagyank_info["single"], [])
+    
+    # Astrology (with new v2.0 flawless local timezone logic)
     birth_datetime = datetime(data.year, data.month, data.day, data.hour, data.minute)
     moon_long = calculate_moon_longitude(data.year, data.month, data.day, data.hour, data.minute, data.lat, data.lon)
     dasha_results = calculate_dasha(moon_long, birth_datetime)
     
     return {
         "numerology": {
-            "moolank": moolank,
-            "bhagyank": bhagyank,
-            "name_number": name_num,
+            "moolank": moolank_info,
+            "bhagyank": bhagyank_info,
+            "name_number": name_info,
+            "current_year_prediction": {
+                "year": current_year,
+                "personal_year": personal_year_info
+            },
             "suitable_numbers": list(set(friendly_moolank + friendly_bhagyank))
         },
         "astrology": dasha_results
+    }
+
+@app.post("/predict-periods")
+def predict_periods(data: PeriodPredictionData):
+    """
+    Calculates detailed numerological periods for a specific year and month.
+    Vedic numerologist logic: Year is top-level cycle, Month is mid-level.
+    """
+    personal_year_info = calculate_yearly_period(data.dob_day, data.dob_month, data.predict_year)
+    
+    # Personal Month = Personal Year (single digit) + Predicted Month
+    # Must use single digits for cyclical numerology steps
+    personal_month_compound = personal_year_info["single"] + data.predict_month
+    personal_month_single = reduce_to_single_digit(personal_month_compound)
+    
+    # Personal Day = Personal Month (single digit) + Predicted Day
+    personal_day_compound = personal_month_single + data.predict_day
+    personal_day_single = reduce_to_single_digit(personal_day_compound)
+    
+    return {
+        "prediction_year": data.predict_year,
+        "prediction_month_name": datetime(2000, data.predict_month, 1).strftime("%B"),
+        "prediction_day": data.predict_day,
+        "personal_year": personal_year_info,
+        "personal_month": {
+            "single": personal_month_single,
+            "compound": personal_month_compound
+        },
+        "personal_day": {
+            "single": personal_day_single,
+            "compound": personal_day_compound
+        }
     }
 
 if __name__ == "__main__":
